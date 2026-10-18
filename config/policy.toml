@@ -1,0 +1,50 @@
+[limits]
+max_prompt_chars = 4000
+max_tools_per_request = 3
+
+[roles]
+viewer = ["search_knowledge"]
+operator = ["search_knowledge", "get_incident", "create_ticket"]
+security_engineer = ["search_knowledge", "get_incident", "create_ticket", "quarantine_workload"]
+
+[blocked_tools]
+names = ["shell", "exec", "read_secret", "delete_resource"]
+
+[[input_rules]]
+id = "prompt-injection.instruction-override"
+severity = "high"
+message = "Prompt attempts to override trusted instructions."
+pattern = "(?i)\\b(ignore|disregard|forget)\\b.{0,40}\\b(previous|prior|system|developer)\\b.{0,24}\\b(instruction|message|prompt)s?\\b"
+
+[[input_rules]]
+id = "prompt-injection.system-prompt-extraction"
+severity = "high"
+message = "Prompt requests hidden system or developer instructions."
+pattern = "(?i)\\b(reveal|show|print|repeat|expose)\\b.{0,40}\\b(system|developer)\\b.{0,16}\\b(prompt|message|instruction)s?\\b"
+
+[[input_rules]]
+id = "data-exfiltration.secret-request"
+severity = "critical"
+message = "Prompt requests credentials or environment secrets."
+pattern = "(?i)\\b(show|print|reveal|return|dump|exfiltrate)\\b.{0,40}\\b(secret|credential|api[ _-]?key|access[ _-]?token|environment variable)s?\\b"
+
+[[input_rules]]
+id = "tool-abuse.command-execution"
+severity = "critical"
+message = "Prompt requests direct command execution."
+pattern = "(?i)\\b(run|execute|launch)\\b.{0,24}\\b(shell|terminal|bash|powershell|command)s?\\b"
+
+[[output_rules]]
+id = "sensitive.aws-access-key"
+pattern = "\\bAKIA[0-9A-Z]{16}\\b"
+replacement = "[REDACTED_AWS_ACCESS_KEY]"
+
+[[output_rules]]
+id = "sensitive.bearer-token"
+pattern = "(?i)\\bBearer\\s+[A-Za-z0-9._~+/-]{16,}=*"
+replacement = "Bearer [REDACTED_TOKEN]"
+
+[[output_rules]]
+id = "privacy.email-address"
+pattern = "(?i)\\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}\\b"
+replacement = "[REDACTED_EMAIL]"
